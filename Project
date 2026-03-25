@@ -1,0 +1,109 @@
+#
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from google.colab import files
+
+# 2. UPLOAD CSV FILE
+print("/content/fashion_sales_india (1).csv")
+uploaded = files.upload()
+
+file_name = list(uploaded.keys())[0]
+df = pd.read_csv(file_name)
+
+print("\n=== Data Info ===")
+print(df.info())
+
+print("\n=== Description ===")
+print(df.describe())
+
+print("\n=== Missing Values ===")
+print(df.isnull().sum())
+
+#DATA CLEANING
+df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+df['Gender'] = df['Gender'].astype('category')
+df['Brand'] = df['Brand'].astype('category')
+df['Item'] = df['Item'].astype('category')
+df['City'] = df['City'].astype('category')
+
+#FEATURE ENGINEERING
+df['Revenue'] = df['Price_INR'] * df['Quantity']
+
+#AGE SEGMENT
+bins = [10, 18, 25, 35, 50, 65]
+labels = ["Teen", "Youth", "Adult", "Middle Age", "Senior"]
+df['AgeGroup'] = pd.cut(df['Age'], bins=bins, labels=labels, include_lowest=True)
+
+#MONTHLY TREND
+df['Month'] = df['Date'].dt.to_period('M')
+
+
+
+
+
+# Brand Revenue
+brand_rev = df.groupby('Brand')['Revenue'].sum().sort_values(ascending=False)
+plt.figure(figsize=(8,4))
+brand_rev.plot(kind='bar')
+plt.title("Revenue by Brand")
+plt.ylabel("Revenue")
+plt.show()
+
+# Gender Purchase Share
+gender_qty = df.groupby('Gender')['Quantity'].sum()
+plt.figure()
+gender_qty.plot(kind='pie', autopct='%1.1f%%')
+plt.title("Gender Purchase Share")
+plt.show()
+
+# Age Group Revenue
+age_rev = df.groupby('AgeGroup')['Revenue'].sum().sort_values(ascending=False)
+plt.figure()
+age_rev.plot(kind='bar')
+plt.title("Revenue by Age Group")
+plt.ylabel("Revenue")
+plt.show()
+
+# City Demand
+city_demand = df.groupby('City')['Quantity'].sum().sort_values(ascending=False)
+plt.figure(figsize=(8,4))
+city_demand.plot(kind='bar')
+plt.title("Demand by City")
+plt.ylabel("Units Sold")
+plt.show()
+
+# Monthly Trend Revenue
+monthly_rev = df.groupby('Month')['Revenue'].sum()
+plt.figure(figsize=(10,4))
+monthly_rev.plot()
+plt.title("Monthly Revenue Trend")
+plt.ylabel("Revenue")
+plt.show()
+
+# Item Popularity
+item_count = df['Item'].value_counts()
+plt.figure(figsize=(8,4))
+sns.barplot(x=item_count.index, y=item_count.values)
+plt.xticks(rotation=45)
+plt.title("Item Popularity")
+plt.ylabel("Count")
+plt.show()
+
+# Correlation Heatmap
+corr = df[['Age','Price_INR','Quantity','Revenue']].corr()
+plt.figure(figsize=(6,4))
+sns.heatmap(corr, annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
+plt.show()
+
+
+# INSIGHT SUMMARY
+
+print("\n==== BUSINESS INSIGHTS ====")
+print("Top Brand:", brand_rev.idxmax())
+print("Top City:", city_demand.idxmax())
+print("Top Age Segment:", age_rev.idxmax())
+print("Top Revenue Month:", monthly_rev.idxmax())
+print("============================")
